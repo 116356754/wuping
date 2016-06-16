@@ -157,6 +157,10 @@ fsm.onenterstate = function (event, from, to) {
     if (fs.existsSync(path.join(__dirname, config.swfDir, to + '.swf'))) {
         console.log(path.join(__dirname, config.swfDir, to + '.swf') + '文件存在');
         playSwf(path.join(__dirname, config.swfDir, to + '.swf'));
+        if (timer1) {
+            clearTimeout(timer1);
+            timer1 = null;
+        }
     }
     else
         console.error('该状态的文件不存在');
