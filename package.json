@@ -1,5 +1,8 @@
 {
   "name": "electron",
   "productName": "Electron",
-  "main": "main.js"
+  "main": "main.js",
+  "devDependencies": {
+    "rcedit": "^0.5.0"
+  }
 }
