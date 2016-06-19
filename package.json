@@ -4,5 +4,8 @@
   "main": "main.js",
   "devDependencies": {
     "rcedit": "^0.5.0"
+  },
+  "dependencies": {
+    "recursive-readdir": "^2.0.0"
   }
 }
