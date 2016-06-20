@@ -1,9 +1,15 @@
 /**
  * Created by lenovo on 16-6-19.
  */
-var recursive = require('recursive-readdir');
 
-recursive('./img', function (err, files) {
-    // Files is an array of filename
-    console.log(files);
-});
+var timer = setTimeout(function(){
+        console.log('timeout 1 s');
+
+        console.log(timer==null);
+        clearTimeout(timer);
+        console.log(timer ==null);
+    }, 1000);
+
+
+
+

@@ -10,68 +10,21 @@ var emitter = new EventEmitter();
 var fs = nodeRequire('fs');
 var path = nodeRequire('path');
 
+var recursive = nodeRequire('recursive-readdir');
+
 var StateMachine = nodeRequire("./lib/state-machine.min.js");
 var config = nodeRequire('./config');
 
-var SerialPort = nodeRequire("serialport").SerialPort;
-
+var SerialPort = nodeRequire("./lib/serialport");
 var gallary = nodeRequire('./lib/gallary');
+var flash = nodeRequire('./lib/flash');
 
+var intervId = null;
+
+var timer = null;//图片操作定时器
 var timer1 = null;//待机定时器
-
-var flashvars = {};
-var params = {
-    wmode: "transparent",
-    allowScriptAccess: "always",
-    scale: "exactFit",
-    play: true,
-    loop: false,
-    allowfullscreen: true,
-    swliveconnect: true
-};
-
-var attributes = {width: "100%", height: "100%"};
-
-//Support function: checks to see if target
-//element is an object or embed element
-function isObject(targetID){
-    var isFound = false;
-    var el = document.getElementById(targetID);
-    if(el && (el.nodeName === "OBJECT" || el.nodeName === "EMBED")){
-        isFound = true;
-    }
-    return isFound;
-}
-
-//Support function: creates an empty
-//element to replace embedded SWF object
-function replaceSwfWithEmptyDiv(targetID){
-    var el = document.getElementById(targetID);
-    if(el){
-        var div = document.createElement("div");
-        el.parentNode.insertBefore(div, el);
-
-        //Remove the SWF
-        swfobject.removeSWF(targetID);
-        //Give the new DIV the old element's ID
-        div.setAttribute("id", targetID);
-    }
-}
-
-
-function loadSWF(url, targetID) {
-    //Check for existing SWF
-    if (isObject(targetID)) {
-        //replace object/element with a new div
-        replaceSwfWithEmptyDiv(targetID);
-    }
-
-    //Embed SWF
-    if (swfobject.hasFlashPlayerVersion("9")) {
-        attributes.data = url;
-        var obj = swfobject.createSWF(attributes, params, targetID);
-    }
-}
+var honorFiles = null;//宣传视频目录文件数组
+var currId=0;//当前宣传视频目录下正在播放的文件索引号
 
 var fsm = StateMachine.create({
     initial: '待机界面',
@@ -90,7 +43,7 @@ var fsm = StateMachine.create({
         {name: '超时指令', from: '展区简介', to: '待机界面'},
 
         {name: '返回指令', from: '宣传视频', to: '一级界面'},
-        {name: '播放完成指令', from: '宣传视频', to: '一级界面'},
+        //{name: '播放完成指令', from: '宣传视频', to: '一级界面'},
 
         {name: '返回指令', from: '荣誉墙', to: '一级界面'},
         {name: '超时指令', from: '荣誉墙', to: '待机界面'},
@@ -149,30 +102,46 @@ var fsm = StateMachine.create({
 });
 
 /////////////////////////////////////////////////////
-//mywork
-function readserialportport() {
-    
-    var serialPort = new SerialPort(config.COMMPORT, {
-        baudrate: config.COMMbaudrate,
-        autoOpen: true
-    }, function (err) {
-        if (err)
-            return  emitter.emit('err', '串口打开失败:' + err.message);
-    });
-
-    serialPort.on("open", function (err) {
-        if (err)
-            return emitter.emit('err', '串口打开失败:' + err.message);
-
-        console.log('open');
-    });
-
-    serialPort.on('data', function (data) {
-        //alert(JSON.parse(data));
-        var buff = new Buffer(data, 'utf8'); //no sure about this
-        emitter.emit('cmd', buff.toString('hex'));
-    });
+function startNoCmdTimer() {
+    if (timer1 == null) {
+        console.log('开启无操作定时器');
+        timer1 = setTimeout(()=>fsm.超时指令(), config.timeout);
+    }
 }
+
+function stopNoCmdTimer() {
+    if (timer1) {
+        clearTimeout(timer1);
+        timer1 = null;
+    }
+}
+
+function intervalFlashOverTimer() {
+    if (intervId == undefined)
+        intervId = setInterval(isPlayOver, 500);
+}
+
+function stopIntervalFlash() {
+    if (intervId) {
+        clearInterval(intervId);
+        intervId = null;
+    }
+}
+
+function startGallaryNoCmdTimer() {
+    if (timer == null) {
+        console.log('开启图片浏览无操作定时器');
+        timer = setTimeout(()=>fsm.超时指令(), config.pictimeout);
+    }
+}
+
+function stopGallaryNoCmdTimer() {
+    if (timer) {
+        clearTimeout(timer);
+        timer = null;
+    }
+}
+//////////////////////////////////////////////////////
 
 emitter.on('err', (e)=> {
     alert(e);
@@ -180,68 +149,68 @@ emitter.on('err', (e)=> {
 });
 
 function isPlayOver() {
-    var flashMovie = swfobject.getObjectById('flashcontent');
+    var flashMovie = flash.FlashObj();
     var totalFrames = flashMovie.TotalFrames();
     //// 4 is the index of the property for _currentFrame
     var currentFrame = flashMovie.CurrentFrame();
     //console.log(currentFrame+':'+totalFrames);
-    if (currentFrame + 1 == totalFrames) {
-        if (fsm.can('播放完成指令')) {
-            console.log('play over');
-            fsm.播放完成指令();
-        }
+    if (currentFrame + 1 >= totalFrames) {
+        //if (fsm.can('播放完成指令')) {
+        //    console.log('play over');
+        //    fsm.播放完成指令();
+        //}
 
         if (fsm.can('超时指令')) {
-            if(timer1 ==null) {
-                console.log('开启无操作定时器');
-                timer1 = setTimeout(()=>fsm.超时指令(), config.timeout);
-            }
+            startNoCmdTimer();
+        }
+
+        if(fsm.current =='宣传视频')
+        {
+            playDirNext();
         }
     }
 }
 
 function playSwf(file) {
     console.log('播放文件：' + file);
-    loadSWF(file, 'flashcontent');
-    console.log(swfobject.getObjectById('flashcontent').TotalFrames());
+    flash.loadSWF(file, 'flashcontent');
 }
 
 fsm.onenterstate = function (event, from, to) {
     console.log('进入' + to);
-    if (timer1) {
-        clearTimeout(timer1);
-        timer1 = null;
-    }
+    stopNoCmdTimer();
 
-    //if(to =='宣传视频界面')
-    //{
-    //    //console.log('播放目录下所有视频文件')
-    //}
-    //else if(to=='领导关怀')
-    //{
-    //    //playDirPics(path.join(__dirname,config.leaderDir));
-    //}
-    //else if(to =='主题活动')
-    //{
-		////playDirPics(path.join(__dirname,config.topicDir));
-    //}
-    //else {//其他播放swf
+    if(to =='宣传视频')
+    {
+        //console.log('播放目录下所有视频文件')
+    }
+    else if(to=='领导关怀')
+    {
+        //playDirPics(path.join(__dirname,config.leaderDir));
+    }
+    else if(to =='主题活动')
+    {
+		//playDirPics(path.join(__dirname,config.topicDir));
+    }
+    else {//其他播放swf
         if (fs.existsSync(path.join(__dirname, config.swfDir, to + '.swf'))) {
             console.log(path.join(__dirname, config.swfDir, to + '.swf') + '文件存在');
             playSwf(path.join(__dirname, config.swfDir, to + '.swf'));
+            intervalFlashOverTimer();
         }
         else
             console.error('该状态的文件不存在');
-    //}
+    }
 };
 
 function playDirPics(dir)
 {
     //停止flash播放
-    swfobject.getObjectById('flashcontent').StopPlay();
+    flash.StopFlashMovie();
     document.getElementById('flashcontent').style.display='none';
 
     clearInterval(intervId);
+    intervId =null;
 
     //首先显示图片浏览器
     document.getElementById('gallary').style.display='block';
@@ -250,53 +219,110 @@ function playDirPics(dir)
     gallary.showDirPics(dir);
 }
 
-fsm.onenter待机界面 = function (event, from, to) {
-    console.log('进入待机界面');
+function playDirNext()
+{
+    var count =honorFiles.length;
+
+    if(count==currId+1){
+        fsm.返回指令();
+        return;
+    }
+
+    playSwf(honorFiles[currId]);
+
+    //循环播放文件夹文件
+    intervalFlashOverTimer();
+
+    currId++;
+}
+
+fsm.onleave宣传视频 = function (event, from, to) {
+    stopIntervalFlash();
+};
+
+fsm.onenter宣传视频 = function (event, from, to) {
+    console.log('进入宣传视频');
+    currId = 0;
+
+    var dir =path.join(__dirname,config.honorDir);
+
+    //遍历图片文件夹
+    recursive(dir, function (err, files) {
+        // Files is an array of filename
+        if (err)
+            console.error(err);
+
+        honorFiles = files;
+        playDirNext();
+    });
 };
 
 fsm.onenter主题活动 = function (event, from, to) {
     console.log('进入主题活动');
     document.getElementById('my-title').innerText = '主题活动';
     playDirPics(path.join(__dirname,config.topicDir));
+    startGallaryNoCmdTimer();
 };
 
 fsm.onenter领导关怀 = function (event, from, to) {
     console.log('进入领导关怀');
     document.getElementById('my-title').innerText = '领导关怀';
     playDirPics(path.join(__dirname,config.leaderDir));
+    startGallaryNoCmdTimer();
 };
 
 //一旦有串口命令过来，立刻取消掉定时器，重新设置定时器，
 //////////////////////////////////////////////////////////////
+
 var cmdHandle = function (cmd) {
     console.log('data received: ' + cmd);
     cmd = 'C' + cmd;
 
-    if (timer1) {
-        clearTimeout(timer1);
-        timer1 = null;
+    stopNoCmdTimer();
+    stopGallaryNoCmdTimer();
+
+    if(cmd ==config.ZOOM)
+    {
+        console.log('放大指令');
+        gallary.zoomPic();
+        startGallaryNoCmdTimer();
+        return;
     }
+    else if(cmd ==config.PREV)
+    {
+        console.log('上一张指令');
+        gallary.prevPic();
+        startGallaryNoCmdTimer();
+        return;
+    }
+    else if(cmd ==config.NEXT)
+    {
+        console.log('下一张指令');
+        gallary.nextPic();
+        startGallaryNoCmdTimer();
+        return;
+    }
+
     fsm[config[cmd]]();
 };
-emitter.on('cmd', cmdHandle);
 
-var intervId = null;
+emitter.on('cmd', cmdHandle);
 
 window.onload = function () {
     //首先隐藏图片浏览器
     document.getElementById('gallary').style.display='none';
 
-    loadSWF(path.join(__dirname, config.swfDir, config.waitSwf), 'flashcontent');
+    flash.loadSWF(path.join(__dirname, config.swfDir, config.waitSwf), 'flashcontent');
+    //intervId = setInterval(isPlayOver, 500);
 
-    intervId = setInterval(isPlayOver, 500);
-
-    readserialportport();
+    SerialPort.readserialportport(config.COMMPORT,config.COMMbaudrate);
 };
 
 window.onunload = function () {
-    if(serialport.isOpen())
-        serialport.close();
+    SerialPort.closeserialportport();
 
-    clearTimeout(timer1);
-    clearInterval(intervId);
+    stopNoCmdTimer();
+    stopGallaryNoCmdTimer();
+
+    stopIntervalFlash();
 };

@@ -8,8 +8,12 @@ module.exports = {
 
     timeout:30000,
     swfDir:'static',
+
+    pictimeout:10000,
     topicDir:'topic',
     leaderDir:'leader',
+
+    honorDir:'honor',
 
     waitSwf:'待机界面.swf',
 
@@ -21,9 +25,6 @@ module.exports = {
     C05 :'儿童展区指令',
     C06 :'基础科学展区指令',
     C07 :'返回指令',
-    C08 :'放大指令',
-    C09 :'上一张指令',
-    C10 :'下一张指令',
     C11 :'领导关怀指令',
     C12 :'主题活动指令',
     C13 :'儿童科技乐园指令',
@@ -32,5 +33,9 @@ module.exports = {
     C16 :'声光体验指令',
     C17 :'电磁探秘指令',
     C18 :'数学魅力指令',
-    C19 :'数字生活指令'
+    C19 :'数字生活指令',
+
+    ZOOM:'C08',//放大指令
+    PREV:'C09',//上一张指令
+    NEXT:'C10'//下一张指令
 };
