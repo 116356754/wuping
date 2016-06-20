@@ -32,6 +32,33 @@ var params = {
 
 var attributes = {width: "100%", height: "100%"};
 
+//Support function: checks to see if target
+//element is an object or embed element
+function isObject(targetID){
+    var isFound = false;
+    var el = document.getElementById(targetID);
+    if(el && (el.nodeName === "OBJECT" || el.nodeName === "EMBED")){
+        isFound = true;
+    }
+    return isFound;
+}
+
+//Support function: creates an empty
+//element to replace embedded SWF object
+function replaceSwfWithEmptyDiv(targetID){
+    var el = document.getElementById(targetID);
+    if(el){
+        var div = document.createElement("div");
+        el.parentNode.insertBefore(div, el);
+
+        //Remove the SWF
+        swfobject.removeSWF(targetID);
+        //Give the new DIV the old element's ID
+        div.setAttribute("id", targetID);
+    }
+}
+
+
 function loadSWF(url, targetID) {
     //Check for existing SWF
     if (isObject(targetID)) {
@@ -186,26 +213,26 @@ fsm.onenterstate = function (event, from, to) {
         timer1 = null;
     }
 
-    if(to =='宣传视频界面')
-    {
-        console.log('播放目录下所有视频文件')
-    }
-    else if(to=='领导关怀')
-    {
-        playDirPics(path.join(__dirname,config.leaderDir));
-    }
-    else if(to =='主题活动')
-    {
-		playDirPics(path.join(__dirname,config.topicDir));
-    }
-    else {//其他播放swf
+    //if(to =='宣传视频界面')
+    //{
+    //    //console.log('播放目录下所有视频文件')
+    //}
+    //else if(to=='领导关怀')
+    //{
+    //    //playDirPics(path.join(__dirname,config.leaderDir));
+    //}
+    //else if(to =='主题活动')
+    //{
+		////playDirPics(path.join(__dirname,config.topicDir));
+    //}
+    //else {//其他播放swf
         if (fs.existsSync(path.join(__dirname, config.swfDir, to + '.swf'))) {
             console.log(path.join(__dirname, config.swfDir, to + '.swf') + '文件存在');
             playSwf(path.join(__dirname, config.swfDir, to + '.swf'));
         }
         else
             console.error('该状态的文件不存在');
-    }
+    //}
 };
 
 function playDirPics(dir)
@@ -213,6 +240,8 @@ function playDirPics(dir)
     //停止flash播放
     swfobject.getObjectById('flashcontent').StopPlay();
     document.getElementById('flashcontent').style.display='none';
+
+    clearInterval(intervId);
 
     //首先显示图片浏览器
     document.getElementById('gallary').style.display='block';
@@ -227,12 +256,14 @@ fsm.onenter待机界面 = function (event, from, to) {
 
 fsm.onenter主题活动 = function (event, from, to) {
     console.log('进入主题活动');
-    playDirPics(config.topicDir);
+    document.getElementById('my-title').innerText = '主题活动';
+    playDirPics(path.join(__dirname,config.topicDir));
 };
 
 fsm.onenter领导关怀 = function (event, from, to) {
     console.log('进入领导关怀');
-    playDirPics(config.leaderDir);
+    document.getElementById('my-title').innerText = '领导关怀';
+    playDirPics(path.join(__dirname,config.leaderDir));
 };
 
 //一旦有串口命令过来，立刻取消掉定时器，重新设置定时器，
