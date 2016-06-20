@@ -92,6 +92,9 @@
                     height = pgwSlideshow.config.maxHeight - pgwSlideshow.plugin.find('.ps-list').height();
                 }
             }
+			 else {
+				height = pgwSlideshow.plugin.find('.ps-current').css('height', height);
+			}
 
             if (typeof pgwSlideshow.plugin.find('.ps-current').animate == 'function') {
                 pgwSlideshow.plugin.find('.ps-current').stop().animate({

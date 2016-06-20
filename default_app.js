@@ -35,7 +35,8 @@ app.on('ready', function () {
         }
     });
 
-    mainWindow.loadURL('file://' + __dirname + '/index.html');
+    //mainWindow.loadURL('file://' + __dirname + '/index.html');
+	mainWindow.loadURL('file://' + __dirname + '/gallary/index.html');
     //mainWindow.loadURL('http://www.macromedia.com/support/documentation/en/flashplayer/help/settings_manager04.html');//flash测试
     mainWindow.focus();
     if(!conf.ISPRODUCT)

@@ -1,17 +1,21 @@
 /**
  * Created by Administrator on 2016/6/15.
  */
-var app = require('electron').remote.app;
+var app = nodeRequire('electron').remote.app;
 
-var event = require('events');
-var EventEmitter = require('events').EventEmitter;
+var event = nodeRequire('events');
+var EventEmitter = nodeRequire('events').EventEmitter;
 var emitter = new EventEmitter();
 
-var fs = require('fs');
-var path = require('path');
+var fs = nodeRequire('fs');
+var path = nodeRequire('path');
 
-var StateMachine = require("./lib/state-machine.min.js");
-var config = require('./config');
+var StateMachine = nodeRequire("./lib/state-machine.min.js");
+var config = nodeRequire('./config');
+
+var SerialPort = nodeRequire("serialport").SerialPort;
+
+var gallary = nodeRequire('./lib/gallary');
 
 var timer1 = null;//待机定时器
 
@@ -68,11 +72,11 @@ var fsm = StateMachine.create({
         {name: '领导关怀指令', from: '荣誉墙', to: '领导关怀'},
         {name: '主题活动指令', from: '荣誉墙', to: '主题活动'},
 
-        {name: '超时指令', from: '主题活动指令', to: '荣誉墙'},
-        {name: '超时指令', from: '主题活动指令', to: '荣誉墙'},
+        {name: '超时指令', from: '领导关怀', to: '荣誉墙'},
+        {name: '超时指令', from: '主题活动', to: '荣誉墙'},
 
-        {name: '返回指令', from: '主题活动指令', to: '荣誉墙'},
-        {name: '返回指令', from: '主题活动指令', to: '荣誉墙'},
+        {name: '返回指令', from: '领导关怀', to: '荣誉墙'},
+        {name: '返回指令', from: '主题活动', to: '荣誉墙'},
 
         ////////////////////////////////////////////////////////////////
         {name: '儿童科技乐园指令', from: '展区简介', to: '儿童科技乐园'},
@@ -120,7 +124,7 @@ var fsm = StateMachine.create({
 /////////////////////////////////////////////////////
 //mywork
 function readserialportport() {
-    var SerialPort = require("serialport").SerialPort;
+    
     var serialPort = new SerialPort(config.COMMPORT, {
         baudrate: config.COMMbaudrate,
         autoOpen: true
@@ -177,20 +181,58 @@ function playSwf(file) {
 
 fsm.onenterstate = function (event, from, to) {
     console.log('进入' + to);
-    if (fs.existsSync(path.join(__dirname, config.swfDir, to + '.swf'))) {
-        console.log(path.join(__dirname, config.swfDir, to + '.swf') + '文件存在');
-        playSwf(path.join(__dirname, config.swfDir, to + '.swf'));
-        if (timer1) {
-            clearTimeout(timer1);
-            timer1 = null;
-        }
+    if (timer1) {
+        clearTimeout(timer1);
+        timer1 = null;
     }
-    else
-        console.error('该状态的文件不存在');
+
+    if(to =='宣传视频界面')
+    {
+        console.log('播放目录下所有视频文件')
+    }
+    else if(to=='领导关怀')
+    {
+        playDirPics(path.join(__dirname,config.leaderDir));
+    }
+    else if(to =='主题活动')
+    {
+		playDirPics(path.join(__dirname,config.topicDir));
+    }
+    else {//其他播放swf
+        if (fs.existsSync(path.join(__dirname, config.swfDir, to + '.swf'))) {
+            console.log(path.join(__dirname, config.swfDir, to + '.swf') + '文件存在');
+            playSwf(path.join(__dirname, config.swfDir, to + '.swf'));
+        }
+        else
+            console.error('该状态的文件不存在');
+    }
 };
+
+function playDirPics(dir)
+{
+    //停止flash播放
+    swfobject.getObjectById('flashcontent').StopPlay();
+    document.getElementById('flashcontent').style.display='none';
+
+    //首先显示图片浏览器
+    document.getElementById('gallary').style.display='block';
+
+    //播放目录下图片
+    gallary.showDirPics(dir);
+}
 
 fsm.onenter待机界面 = function (event, from, to) {
     console.log('进入待机界面');
+};
+
+fsm.onenter主题活动 = function (event, from, to) {
+    console.log('进入主题活动');
+    playDirPics(config.topicDir);
+};
+
+fsm.onenter领导关怀 = function (event, from, to) {
+    console.log('进入领导关怀');
+    playDirPics(config.leaderDir);
 };
 
 //一旦有串口命令过来，立刻取消掉定时器，重新设置定时器，
@@ -210,6 +252,9 @@ emitter.on('cmd', cmdHandle);
 var intervId = null;
 
 window.onload = function () {
+    //首先隐藏图片浏览器
+    document.getElementById('gallary').style.display='none';
+
     loadSWF(path.join(__dirname, config.swfDir, config.waitSwf), 'flashcontent');
 
     intervId = setInterval(isPlayOver, 500);
@@ -218,7 +263,9 @@ window.onload = function () {
 };
 
 window.onunload = function () {
-    serialport.close();
+    if(serialport.isOpen())
+        serialport.close();
+
     clearTimeout(timer1);
     clearInterval(intervId);
 };

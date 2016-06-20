@@ -8,6 +8,8 @@ module.exports = {
 
     timeout:30000,
     swfDir:'static',
+    topicDir:'topic',
+    leaderDir:'leader',
 
     waitSwf:'待机界面.swf',
 

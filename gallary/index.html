@@ -8,9 +8,17 @@
 	<link rel="stylesheet" type="text/css" href="css/normalize.css" />
 	<link rel="stylesheet" type="text/css" href="css/default.css">
 	<link rel="stylesheet" type="text/css" href="css/pgwslideshow.css">
+	
+	<script>
+		// 重命名 Electron 提供的 require
+		window.nodeRequire = require;
+		delete window.require;
+		delete window.exports;
+		delete window.module;
+	</script>
 </head>
 <body>
-	<div class="htmleaf-container">
+	<div class="htmleaf-container" id='gallary'>
 		<header class="htmleaf-header">
 			<h1 id='my-title'>领导关怀</h1>
 		</header>
@@ -24,24 +32,15 @@
 	<script src="js/jquery.min.js" type="text/javascript"></script>
 	<script type="text/javascript" src="js/pgwslideshow.min.js"></script>
 	<script type="text/javascript">
-		var addAnother = function(src,alt,desc) {
-			var li = document.createElement("li");
+		
+		//pgwSlideshow.nextSlide();//下一张图片
+		//pgwSlideshow.previousSlide();//上一张图片
 
-			var img = document.createElement("img");
-			img.setAttribute("src", src); // added line
-			img.setAttribute("alt", alt); // added line
-			img.setAttribute("data-description", desc); // added line
-
-			li.appendChild(img);
-
-			$('.pgwSlideshow').append(li);
-		};
 
         $(document).ready(function() {
 
-			addAnother("img/san-francisco.jpg","San Francisco, USA","Golden Gate Bridge");
-            addAnother("img/sydney.jpg","sydney","");
-
+			resDir('img');
+			
 		    $('.pgwSlideshow').pgwSlideshow({
 		    	transitionEffect:'fading',
 		    	autoSlide:false
