@@ -9,7 +9,7 @@ module.exports = {
     timeout:30000,
     swfDir:'static',
 
-    pictimeout:10000,
+    pictimeout:30000,
     topicDir:'topic',
     leaderDir:'leader',
 
@@ -18,6 +18,7 @@ module.exports = {
     waitSwf:'待机界面.swf',
 
     C01:'一级界面指令',
+
     C02:'展区简介指令',
     C03:'宣传视频指令',
     C04:'荣誉墙指令',

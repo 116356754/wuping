@@ -26,12 +26,15 @@ app.on('ready', function () {
         frame: !conf.ISPRODUCT,
         kiosk: conf.ISPRODUCT,
         fullscreen:conf.ISPRODUCT,
-        alwaysOnTop:true,
-            'auto-hide-menu-bar': true,
+        alwaysOnTop:false,
+        'auto-hide-menu-bar': true,
         'use-content-size': true,
-        'web-preferences': {
+            useContentSize:true,
+            'web-preferences': {
             'plugins': true,
-            'web-security': false
+            'web-security': false,
+            experimentalCanvasFeatures:true,
+            experimentalFeatures:true
         }
     });
 
