@@ -9,13 +9,13 @@
 	<link rel="stylesheet" type="text/css" href="css/default.css">
 	<link rel="stylesheet" type="text/css" href="css/pgwslideshow.css">
 	
-	<script>
+	<!--script>
 		// 重命名 Electron 提供的 require
 		window.nodeRequire = require;
 		delete window.require;
 		delete window.exports;
 		delete window.module;
-	</script>
+	</script-->
 </head>
 <body>
 	<div class="htmleaf-container" id='gallary'>
@@ -25,6 +25,7 @@
 		<div class="htmleaf-content bgcolor-3">
 			<ul class="pgwSlideshow">
 			    <li><img src="file://F:\mywork\wuping\resources\app\leader\toronto.jpg" alt="San Francisco, USA" data-description="Golden Gate Bridge"></li>
+				<li><img src="file://F:\mywork\wuping\resources\app\leader\tokyo.jpg" alt="鬼子"></li>
 			</ul>
 		</div>
 	</div>
@@ -34,10 +35,26 @@
 	<script type="text/javascript">
         $(document).ready(function() {
 		    $('.pgwSlideshow').pgwSlideshow({
-		    	transitionEffect:'fading',
+		    	transitionEffect:'sliding',
 		    	autoSlide:false
 		    });
+			
+			document.onclick=function(){
+				//alert('sss');
+				//var element = document.querySelector('.pgwSlideshow .ps-current > ul > li[style~="display: block;"]');
+				//var element = document.querySelector('.elt_1');
+				//var imgele =element.firstChild;
+				
+				var li = document.querySelector('li[style*="block"]');
+				var image = li.firstChild;
+				//alert(image.src);
+				image.style='-webkit-transform:scale(1.5,1.5)';
+				
+			};
 		});
+		
+		
+		
 	</script>
 </body>
 </html>
