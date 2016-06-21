@@ -21,8 +21,8 @@ var flash = nodeRequire('./lib/flash');
 
 var intervId = null;
 
-var timer = null;//图片操作定时器
-var timer1 = null;//待机定时器
+var timerGallary = null;//图片操作定时器
+var timerNoCmd = null;//待机定时器
 var honorFiles = null;//宣传视频目录文件数组
 var currId=0;//当前宣传视频目录下正在播放的文件索引号
 
@@ -68,6 +68,8 @@ var fsm = StateMachine.create({
         {name: '数学魅力指令', from: '展区简介', to: '数学魅力'},
         {name: '数字生活指令', from: '展区简介', to: '数字生活'},
         {name: '运动旋律指令', from: '展区简介', to: '运动旋律'},
+        {name: '地震展区指令', from: '展区简介', to: '地震展区'},
+        {name: '地震体验小屋指令', from: '展区简介', to: '地震体验小屋'},
 
         {name: '返回指令', from: '儿童科技乐园', to: '展区简介'},
         {name: '返回指令', from: '儿童展区', to: '展区简介'},
@@ -78,6 +80,8 @@ var fsm = StateMachine.create({
         {name: '返回指令', from: '数学魅力', to: '展区简介'},
         {name: '返回指令', from: '数字生活', to: '展区简介'},
         {name: '返回指令', from: '运动旋律', to: '展区简介'},
+        {name: '返回指令', from: '地震展区', to: '展区简介'},
+        {name: '返回指令', from: '地震体验小屋', to: '展区简介'},
 
         {name: '超时指令', from: '儿童科技乐园', to: '待机界面'},
         {name: '超时指令', from: '儿童展区', to: '待机界面'},
@@ -88,7 +92,8 @@ var fsm = StateMachine.create({
         {name: '超时指令', from: '数学魅力', to: '待机界面'},
         {name: '超时指令', from: '数字生活', to: '待机界面'},
         {name: '超时指令', from: '运动旋律', to: '待机界面'},
-
+        {name: '超时指令', from: '地震展区', to: '待机界面'},
+        {name: '超时指令', from: '地震体验小屋', to: '待机界面'}
         //{name: '播放完成指令', from: '儿童科技乐园', to: '展区简介'},
         //{name: '播放完成指令', from: '儿童展区', to: '展区简介'},
         //{name: '播放完成指令', from: '基础科学展区', to: '展区简介'},
@@ -103,22 +108,22 @@ var fsm = StateMachine.create({
 
 /////////////////////////////////////////////////////
 function startNoCmdTimer() {
-    if (timer1 == null) {
+    if (timerNoCmd == null) {
         console.log('开启无操作定时器');
-        timer1 = setTimeout(()=>fsm.超时指令(), config.timeout);
+        timerNoCmd = setTimeout(()=>fsm.超时指令(), config.timeout);
     }
 }
 
 function stopNoCmdTimer() {
-    if (timer1) {
-        clearTimeout(timer1);
-        timer1 = null;
+    if (timerNoCmd) {
+        clearTimeout(timerNoCmd);
+        timerNoCmd = null;
     }
 }
 
 function intervalFlashOverTimer() {
     if (intervId == undefined)
-        intervId = setInterval(isPlayOver, 500);
+        intervId = setInterval(isPlayOver, 1000);
 }
 
 function stopIntervalFlash() {
@@ -129,16 +134,16 @@ function stopIntervalFlash() {
 }
 
 function startGallaryNoCmdTimer() {
-    if (timer == null) {
+    if (timerGallary == null) {
         console.log('开启图片浏览无操作定时器');
-        timer = setTimeout(()=>fsm.超时指令(), config.pictimeout);
+        timerGallary = setTimeout(()=>fsm.超时指令(), config.pictimeout);
     }
 }
 
 function stopGallaryNoCmdTimer() {
-    if (timer) {
-        clearTimeout(timer);
-        timer = null;
+    if (timerGallary) {
+        clearTimeout(timerGallary);
+        timerGallary = null;
     }
 }
 //////////////////////////////////////////////////////
@@ -159,6 +164,9 @@ function isPlayOver() {
         //    console.log('play over');
         //    fsm.播放完成指令();
         //}
+        console.log('播放完成');
+
+        stopIntervalFlash();
 
         if (fsm.can('超时指令')) {
             startNoCmdTimer();
@@ -174,6 +182,8 @@ function isPlayOver() {
 function playSwf(file) {
     console.log('播放文件：' + file);
     flash.loadSWF(file, 'flashcontent');
+
+    intervalFlashOverTimer();
 }
 
 fsm.onenterstate = function (event, from, to) {
@@ -196,7 +206,7 @@ fsm.onenterstate = function (event, from, to) {
         if (fs.existsSync(path.join(__dirname, config.swfDir, to + '.swf'))) {
             console.log(path.join(__dirname, config.swfDir, to + '.swf') + '文件存在');
             playSwf(path.join(__dirname, config.swfDir, to + '.swf'));
-            intervalFlashOverTimer();
+
         }
         else
             console.error('该状态的文件不存在');
@@ -234,19 +244,16 @@ function playDirNext()
 
     playSwf(honorFiles[currId]);
 
-    //循环播放文件夹文件
-    intervalFlashOverTimer();
-
     currId++;
 }
 
 fsm.onleave宣传视频 = function (event, from, to) {
-    stopIntervalFlash();
+    //stopIntervalFlash();
 };
 
 fsm.onenter宣传视频 = function (event, from, to) {
     currId = 0;
-    stopIntervalFlash();
+
     var dir =path.join(__dirname,config.honorDir);
     //遍历图片文件夹
     recursive(dir, function (err, files) {
@@ -256,7 +263,6 @@ fsm.onenter宣传视频 = function (event, from, to) {
 
         honorFiles = files;
         playDirNext();
-        intervalFlashOverTimer();
     });
 };
 
