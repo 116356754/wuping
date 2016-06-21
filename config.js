@@ -2,7 +2,7 @@
  * Created by Administrator on 2016/6/14.
  */
 module.exports = {
-    ISPRODUCT:false,
+    ISPRODUCT:true,
     COMMPORT: 'com3',
     COMMbaudrate:9600,
 

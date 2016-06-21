@@ -219,14 +219,18 @@ function playDirPics(dir)
     gallary.showDirPics(dir);
 }
 
+
 function playDirNext()
 {
     var count =honorFiles.length;
 
-    if(count==currId+1){
+    if(count <=currId){
         fsm.返回指令();
         return;
     }
+
+    if(!flash.IsSwf(honorFiles[currId]))
+        return count = count+1;
 
     playSwf(honorFiles[currId]);
 
@@ -241,11 +245,9 @@ fsm.onleave宣传视频 = function (event, from, to) {
 };
 
 fsm.onenter宣传视频 = function (event, from, to) {
-    console.log('进入宣传视频');
     currId = 0;
-
+    stopIntervalFlash();
     var dir =path.join(__dirname,config.honorDir);
-
     //遍历图片文件夹
     recursive(dir, function (err, files) {
         // Files is an array of filename
@@ -254,6 +256,7 @@ fsm.onenter宣传视频 = function (event, from, to) {
 
         honorFiles = files;
         playDirNext();
+        intervalFlashOverTimer();
     });
 };
 
