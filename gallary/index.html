@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh">
 <head>
 	<meta charset="UTF-8">
@@ -17,7 +17,7 @@
 		delete window.module;
 	</script>
 </head>
-<body>
+<body style='overflow:hidden'>
 	<div class="htmleaf-container" id='gallary'>
 		<header class="htmleaf-header">
 			<h1 id='my-title'>领导关怀</h1>
@@ -34,21 +34,33 @@
 	<script type="text/javascript" src="./js/pgwslideshow.min.js"></script>
 	<script type="text/javascript">
         $(document).ready(function() {
-		    $('.pgwSlideshow').pgwSlideshow({
+		    var pgwSlideshow = $('.pgwSlideshow').pgwSlideshow({
 		    	transitionEffect:'sliding',
-		    	autoSlide:false
+		    	autoSlide:false,
+				maxHeight:window.screen.height-100,
+				afterSlide:function()
+				{
+					var li = document.querySelector('li[style*="block"]');
+					var image = li.firstChild;
+					//alert(image.src);
+					image.style.webkitTransform='';
+				}
 		    });
+
 			
-//			document.onclick=function(){
-//				var li = document.querySelector('li[style*="block"]');
-//				var image = li.firstChild;
-//				alert(image.src);
-//				//image.style='-webkit-transform:scale(1.5,1.5)';
-//				image.width = image.width * 1.2;
-//				image.height = image.height * 1.2;
-//			};
+			document.onclick=function(){
+				var li = document.querySelector('li[style*="block"]');
+				var image = li.firstChild;
+				//alert(image.src);
+				image.style.webkitTransform ='scale(1.5,1.5)';
+				//image.style='-webkit-transform:scale(1.5,1.5)';
+			};
+			
+			//setTimeout(zoom,5000);
 		});
 		
 	</script>
+	
+
 </body>
 </html>

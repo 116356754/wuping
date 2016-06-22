@@ -29,8 +29,6 @@
     z-index: 1;
     opacity: 0;
     display: block;
-	max-width:900px;
-	margin:auto
 }
 
 .pgwSlideshow .ps-current > ul  > li img {
